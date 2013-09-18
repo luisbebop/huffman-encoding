@@ -6,6 +6,7 @@ typedef struct node_t {
 	int freq;
 	char c;
 } *node;
+FILE *f;
  
 struct node_t pool[256] = {{0}};
 node qqq[255], *q = qqq - 1;
@@ -102,13 +103,51 @@ void decode(const char *s, node t)
 	putchar('\n');
 	if (t != n) printf("garbage input\n");
 }
+
+void saveTree(node n)
+{
+	
+	f = fopen("huffman.gv", "a+");
+	if(n->c)
+		fprintf(f,"c%c [label=\"{{%c|%d}|%s}\", color=forestgreen, shape=record];\n", n->c, n->c, n->freq, code[n->c]);
+	else
+		fprintf(f,"a%p [label=\"%d\", color=blue];\n", n, n->freq);
+
+	if(n->right) {
+		fprintf(f,"a%p", n);
+		if(n->right->c)
+			fprintf(f," -> c%c [label=1];\n", n->right->c);
+		else
+			fprintf(f," -> a%p [label=1];\n", n->right);
+
+	 	saveTree(n->right);
+	}
+
+	if(n->left) {
+		fprintf(f,"a%p", n);
+		if(n->left->c)
+			fprintf(f," -> c%c [label=0];\n", n->left->c);
+		else
+			fprintf(f," -> a%p [label=0];\n", n->left);
+
+	 	saveTree(n->left);
+	}
+}
  
-int main(void)
+int main(int argc, char *argv[])
 {
 	int i;
 	char buf[1024];
-	const char *str = "this is an example for huffman encoding";
- 
+	const char *str = NULL;
+
+	// Use command line argument if suplied
+	if(argc == 2) {
+		str = argv[1];
+	}
+	else {
+		str = "this is an example for huffman encoding";
+	}
+	
 	init(str);
 	for (i = 0; i < 128; i++)
 		if (code[i]) printf("'%c': %s\n", i, code[i]);
@@ -118,6 +157,16 @@ int main(void)
  
 	printf("decoded: ");
 	decode(buf, q[1]);
+
+	f = fopen("huffman.gv", "w");
+	fclose(f);
+
+	f = fopen("huffman.gv", "a+");
+	fprintf(f, "Digraph G {\n");
+	fseek(f,-1,SEEK_CUR);
+	fprintf(f, "}\n");
+	saveTree(q[1]);
+	fclose(f);
  
 	return 0;
 }
