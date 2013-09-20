@@ -6,7 +6,6 @@ typedef struct node_t {
 	int freq;
 	char c;
 } *node;
-FILE *f;
  
 struct node_t pool[256] = {{0}};
 node qqq[255], *q = qqq - 1;
@@ -104,34 +103,48 @@ void decode(const char *s, node t)
 	if (t != n) printf("garbage input\n");
 }
 
-void saveTree(node n)
+/* Perform a reverse pre-order traversal of the tree writing to f Dot code */
+void walk_tree(node n, FILE* f)
 {
-	
-	f = fopen("huffman.gv", "a+");
 	if(n->c)
-		fprintf(f,"c%c [label=\"{{%c|%d}|%s}\", color=forestgreen, shape=record];\n", n->c, n->c, n->freq, code[n->c]);
+		fprintf(f,"\tc%d [label=\"{{%c|%d}|%s}\", color=forestgreen, shape=record];\n", 
+			n->c, n->c, n->freq, code[n->c]);
 	else
-		fprintf(f,"a%p [label=\"%d\", color=blue];\n", n, n->freq);
+		fprintf(f,"\tp%p [label=\"%d\", color=blue];\n", n, n->freq);
 
 	if(n->right) {
-		fprintf(f,"a%p", n);
+		fprintf(f,"\tp%p", n);
 		if(n->right->c)
-			fprintf(f," -> c%c [label=1];\n", n->right->c);
+			fprintf(f," -> c%d [label=1];\n", n->right->c);
 		else
-			fprintf(f," -> a%p [label=1];\n", n->right);
+			fprintf(f," -> p%p [label=1];\n", n->right);
 
-	 	saveTree(n->right);
+	 	walk_tree(n->right, f);
 	}
 
 	if(n->left) {
-		fprintf(f,"a%p", n);
+		fprintf(f,"\tp%p", n);
 		if(n->left->c)
-			fprintf(f," -> c%c [label=0];\n", n->left->c);
+			fprintf(f," -> c%d [label=0];\n", n->left->c);
 		else
-			fprintf(f," -> a%p [label=0];\n", n->left);
+			fprintf(f," -> p%p [label=0];\n", n->left);
 
-	 	saveTree(n->left);
+	 	walk_tree(n->left, f);
 	}
+}
+
+void save_tree(node n)
+{
+	FILE *f;
+	f = fopen("huffman.gv", "w");
+
+	fprintf(f, "Digraph G {\n");
+	
+	walk_tree(n, f);
+
+	fprintf(f, "}\n");
+
+	fclose(f);
 }
  
 int main(int argc, char *argv[])
@@ -150,23 +163,15 @@ int main(int argc, char *argv[])
 	
 	init(str);
 	for (i = 0; i < 128; i++)
-		if (code[i]) printf("'%c': %s\n", i, code[i]);
+		if (code[i]) printf("%c: %s\n", i, code[i]);
  
 	encode(str, buf);
 	printf("encoded: %s\n", buf);
  
 	printf("decoded: ");
 	decode(buf, q[1]);
+	
+	save_tree(q[1]);
 
-	f = fopen("huffman.gv", "w");
-	fclose(f);
-
-	f = fopen("huffman.gv", "a+");
-	fprintf(f, "Digraph G {\n");
-	fseek(f,-1,SEEK_CUR);
-	fprintf(f, "}\n");
-	saveTree(q[1]);
-	fclose(f);
- 
 	return 0;
 }

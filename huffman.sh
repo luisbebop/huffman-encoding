@@ -1,15 +1,17 @@
 #!/bin/bash
 
-# This simple script runs ./huffman with parameter $1
-# and uses Dot to produce a pdf file with the
-# Huffman tree and Evince to open the pdf.
+# This simple script runs ./main with parameter $1
+# and uses Dot to produce a png file with the
+# Huffman tree.
 
-echo "$#"
 if [ "$#" -ne 1 ]; then
     ./main 
 else
     ./main "$1"
-
 fi
-dot -Tpdf huffman.gv -o huffman.pdf
-evince huffman.pdf
+
+# Use Dot to produce the png file
+dot -Tpng huffman.gv -o huffman.png
+
+# Open the image
+eog huffman.png
